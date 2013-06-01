@@ -42,17 +42,16 @@ public class SimpleJsonServerTest
     public void testServer() throws IOException
     {
         ServerSocket socket = null;
-        int port = 0;
         for (int i = 49152; i <= 65535; i++) {
           try {
             socket = new ServerSocket(i);
-            port = i;
             break;
           } catch (IOException e) {
             // keep trying
           }
         }
         assertNotNull(socket);
+        int port = socket.getLocalPort();
         socket.close();
         
         HttpServer server = SimpleJsonServer.startServer(port);
@@ -69,7 +68,7 @@ public class SimpleJsonServerTest
         in.close();
         out.close();
         connection.disconnect();
-        assertEquals("Messaging Server", out.toString());
+        assertEquals("JSON Server", out.toString());
         
         // TODO test POST
         

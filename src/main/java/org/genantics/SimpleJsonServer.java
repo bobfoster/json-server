@@ -1,5 +1,6 @@
 package org.genantics;
 
+import org.genantics.json.query.JsonQuery;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -10,6 +11,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Scanner;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonProcessingException;
@@ -51,8 +53,13 @@ public class SimpleJsonServer {
                 responseHeaders.set("Content-Type", "text/plain");
                 exchange.sendResponseHeaders(200, 0);
                 OutputStream responseBody = exchange.getResponseBody();
-                // This is the response sample-notification-plugin expects
-                responseBody.write("Messaging Server".getBytes());
+                URI uri = exchange.getRequestURI();
+                String query = uri.getQuery();
+                if (query == null) {
+                    responseBody.write("JSON Server".getBytes());
+                } else {
+                    responseBody.write(new JsonQuery().eval(query).getBytes("UTF-8"));
+                }
                 responseBody.close();
             } else if (requestMethod.equalsIgnoreCase("POST")) {
                 InputStream in = exchange.getRequestBody();
