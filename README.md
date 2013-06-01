@@ -20,60 +20,21 @@ GET
 A simple naked '/' (just the host and port) will return "JSON Server"
 with some other fixed text telling how to form queries.
 
-The query portion of a URL begins with '?'.
+The query portion of a URL begins with '?'. There may later be query subdivisions,
+but for now there is no path portion of the URL.
 
-A query starting with 'json=' indicates the query is over all JSON
-values stored by the server, and only the JSON values.
+Queries always return a JSON array as a UTF-8 string. If a query has no result,
+it returns "[]". If there is a query syntax error, an error object is returned:
 
-If 'json=' is the first query subpart, the 'json=' may be omitted.
+{
+  "json-query-error": {
+    "query": "query as received",
+    "where": "     ^ indicates position",
+    "what": "nature of error",
+    ....
+  }
+}
 
-A query path starting with 'date=' indicates the query includes the
-date and time when each object was received.
-
-These may be combined, as,
-
-    localhost:8081?date=2013-10,json=job
-
-which means, "all JSON objects with an outer 'job' key that were received
-in October, 2013.
-
-Query results are always JSON arrays. There is no restriction on what kind of 
-JSON values can be stored, so the array may be heterogenous.
-
-For the 'date' form, the result is an array of arrays, of the form:
-
-    [
-      ["YYYY-MM-DDThh:mm:ssZ", value],
-      ...
-    ]
-
-"YYYY-MM-DDThh:mm:ssZ" is the ISO 8601 format date and time the JSON value was
-received, and value is the value, itself.
-
-For the 'json' only form, the array has the format:
-
-    [
-      value,
-      ...
-    ]
-
-The default array contents can be changed by means of a 'select' qualifier, e.g.,
-
-    localhost:8081?date=2013-10,json=job,select=json
-
-will return
-
-    [
-        { "job": value,
-          ...
-        },
-        ...
-    ]
-
-Which is a date-restricted subset of the array that would be returned by
-
-    localhost:8081?json=job
-    
 We will use this JSON value in query examples below:
 
 { "store": {
@@ -112,59 +73,51 @@ We will use this JSON value in query examples below:
   }
 }
 
-Any unique key name used in a query may be used in a select clause. For example,
+NOTHING BELOW THIS IS IMPLEMENTED YET
 
-    ?store.book[{author}],select=author
+For a simple example,
 
-Unless modified by select, a query always returns all of the values that matched
-the query expression, to whatever depth.
+    localhost:8081?json=store
 
-### Queries
+will return all objects in the store that have an outer key "store". When json is the
+first query component, "json=" may be omitted.
 
-The query language is designed for retrieving a number of objects for
-further processing by the receiver. It is not a complete programming
-language.
+    localhost:8081?store.name:"Borders"
 
-Every query is over a hypothetical JSON object with the following format:
+will return at least the JSON value above.
 
-    [ 
-      [ n, "YYYY-MM-DDThh:mm:ssZ", value],
-      ...
+From now on we will omit the host:port part of the URL in example queries.
+
+    ?store.book.author:author?select=author
+
+The use of a name instead of a literal after : binds the name to the value. The above
+will return an array like:
+
+    ["Nigel Rees","Eveln Waugh","Herman Melville","J. R. R. Tolkien"]
+
+Dicey example:
+
+    ?store?select=store.name:n,store.book.category?groupby=n
+    
+Vacuous array levels are omitted, so the result is:
+
+    [ "Borders", [ "reference", "fiction" ] ]
+
+If there were two stores, however, the result would be:
+
+    [
+      [ "Borders", [ "reference", "fiction" ] ]
+      [ "Barnes & Noble", [ "reference", "fiction", "popup" ] ]
     ]
 
-where n is the sequence number of the value in the order received by the server,
-"YYYY-MM-DDThh:mm:ssZ" is the ISO 8601 format date and time the value was
-received, and value is the value that was received.
+Query Components
+----------------
 
-The * (asterisk) stands for any value. So, for example,
+Valid query components are:
 
-    *
-
-or
-
-    [*,*,*]
-
-will return all data in the server, including the sequence numbers and timestamps.
-
-If you only wish to get some of the data in a query, enclose the portion you want
-to receive in parenthesis, e.g.,
-
-    [*,*,(*)]
-
-Inner parenthesis take precedence, or if you like, outer parenthesis are ignored, so
-
-    [*,(*,(*))]
-
-Is the same as the preceding example.
-
-However logical this query form may be, it is awkward. Many queries are only interested
-in the payload - the JSON values originally sent to the server. For shorthand,
-
-    $expr
-
-is interpreted as:
-
-    [*,*,(expr)]
-
-
-  
+    ?json=query (json= may be omitted if first)
+    ?select=names (comma-separated list of names, which are the "columns" of each row)
+    ?from=datetime (starting datetime)
+    ?to=datetime (ending datetime)
+    ?date=datetime (this date, may be partially specified to indicate a range)
+    
