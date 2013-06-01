@@ -26,14 +26,14 @@ but for now there is no path portion of the URL.
 Queries always return a JSON array as a UTF-8 string. If a query has no result,
 it returns "[]". If there is a query syntax error, an error object is returned:
 
-{
-  "json-query-error": {
-    "query": "query as received",
-    "where": "     ^ indicates position",
-    "what": "nature of error",
-    ....
-  }
-}
+    {
+      "json-query-error": {
+        "query": "query as received",
+        "where": "     ^ indicates position",
+        "what": "nature of error",
+        ....
+      }
+    }
 
 We will use this JSON value in query examples below:
 
